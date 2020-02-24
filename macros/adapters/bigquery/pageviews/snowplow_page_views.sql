@@ -4,13 +4,15 @@
 {{
     config(
         materialized='incremental',
-        partition_by='DATE(page_view_start)',
+        partition_by={
+            'field': 'page_view_start',
+            'data_type': 'timestamp'
+        },
         unique_key="page_view_id"
     )
 }}
 
 {% set timezone = var('snowplow:timezone', 'UTC') %}
-{% set start_date = get_most_recent_record(this, "page_view_start", "2001-01-01") %}
 
 /*
     General approach: find sessions that happened since the last time
@@ -27,9 +29,12 @@ with all_events as (
     select *
     from {{ ref('snowplow_base_events') }}
 
-    -- load up events from the start date, and the day before it, to ensure
-    -- that we capture pageviews that span midnight
-    where DATE(collector_tstamp) >= date_sub('{{ start_date }}', interval 1 day)
+    {% if is_incremental() %}
+    where DATE(collector_tstamp) >= date_sub(
+        DATE(_dbt_max_partition),
+        interval {{var('snowplow:page_view_lookback_days')}} day
+    )
+    {% endif %}
 
 ),
 
@@ -39,9 +44,6 @@ new_sessions as (
         domain_sessionid
 
     from all_events
-
-    -- only consider events for sessions that occurred on or after the start_date
-    where DATE(collector_tstamp) >= '{{ start_date }}'
 
 ),
 
