@@ -1,15 +1,20 @@
-
-
-snowplow_users:
-    constraints:
-        not_null:
-            - user_snowplow_domain_id
-            - inferred_user_id
-            - first_session_start
-            - last_session_end
-
-        unique:
-            - inferred_user_id
-
-        relationships:
-            - {from: user_snowplow_domain_id, to: ref('snowplow_page_views'), field: user_snowplow_domain_id }
+version: 2
+models:
+- name: snowplow_users
+  columns:
+  - name: first_session_start
+    tests:
+    - not_null
+  - name: inferred_user_id
+    tests:
+    - not_null
+    - unique
+  - name: last_session_end
+    tests:
+    - not_null
+  - name: user_snowplow_domain_id
+    tests:
+    - not_null
+    - relationships:
+        field: user_snowplow_domain_id
+        to: ref('snowplow_page_views')

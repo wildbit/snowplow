@@ -1,68 +1,73 @@
-
-
-snowplow_web_events:
-    constraints:
-        not_null:
-            - domain_userid
-            - collector_tstamp
-            - domain_sessionid
-            - domain_sessionidx
-            - page_view_id
-
-
-        unique:
-            - page_view_id
-
-        relationships:
-            - {from: page_view_id, to: ref('snowplow_web_page_context'), field: page_view_id }
-
-        # ensure there's actually data here
-        accepted_values:
-            - {field: "case when count(*) > 0 then 'True' else 'False' end", values: ['True']}
-
-
-snowplow_web_events_time:
-    constraints:
-        not_null:
-            - page_view_id
-
-        unique:
-            - page_view_id
-
-        relationships:
-            - {from: page_view_id, to: ref('snowplow_web_page_context'), field: page_view_id }
-
-
-
-snowplow_web_events_scroll_depth:
-    constraints:
-        not_null:
-            - page_view_id
-
-        unique:
-            - page_view_id
-
-        relationships:
-            - {from: page_view_id, to: ref('snowplow_web_page_context'), field: page_view_id }
-
-
-snowplow_web_page_context:
-    constraints:
-        not_null:
-            - root_id
-            - page_view_id
-
-        unique:
-            - root_id
-            - '(page_view_id || root_id)'
-
-snowplow_page_views:
-    constraints:
-        not_null:
-            - user_snowplow_domain_id
-            - session_id
-            - session_index
-            - page_view_id
-
-        unique:
-            - page_view_id
+version: 2
+models:
+- name: snowplow_web_events
+  columns:
+  - name: case when count(*) > 0 then 'True' else 'False' end
+    tests:
+    - accepted_values:
+        values:
+        - 'True'
+  - name: collector_tstamp
+    tests:
+    - not_null
+  - name: domain_sessionid
+    tests:
+    - not_null
+  - name: domain_sessionidx
+    tests:
+    - not_null
+  - name: domain_userid
+    tests:
+    - not_null
+  - name: page_view_id
+    tests:
+    - not_null
+    - relationships:
+        field: page_view_id
+        to: ref('snowplow_web_page_context')
+    - unique
+- name: snowplow_web_events_time
+  columns:
+  - name: page_view_id
+    tests:
+    - not_null
+    - relationships:
+        field: page_view_id
+        to: ref('snowplow_web_page_context')
+    - unique
+- name: snowplow_web_events_scroll_depth
+  columns:
+  - name: page_view_id
+    tests:
+    - not_null
+    - relationships:
+        field: page_view_id
+        to: ref('snowplow_web_page_context')
+    - unique
+- name: snowplow_web_page_context
+  columns:
+  - name: (page_view_id || root_id)
+    tests:
+    - unique
+  - name: page_view_id
+    tests:
+    - not_null
+  - name: root_id
+    tests:
+    - not_null
+    - unique
+- name: snowplow_page_views
+  columns:
+  - name: page_view_id
+    tests:
+    - not_null
+    - unique
+  - name: session_id
+    tests:
+    - not_null
+  - name: session_index
+    tests:
+    - not_null
+  - name: user_snowplow_domain_id
+    tests:
+    - not_null
